@@ -3,6 +3,7 @@ package cmd
 import (
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/choffmeister/restic-plus/internal"
 	"github.com/spf13/cobra"
@@ -15,7 +16,8 @@ var (
 		Use: "restic-plus",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if !rootCmdVerbose {
-				internal.Debug = log.New(ioutil.Discard, "", log.LstdFlags)
+				internal.LogDebug = log.New(ioutil.Discard, "", 0)
+				internal.LogRestic = log.New(ioutil.Discard, "", 0)
 			}
 			context, err := internal.NewContext(rootCmdConfig)
 			if err != nil {
@@ -28,7 +30,8 @@ var (
 			if len(args) == 0 {
 				return cmd.Usage()
 			}
-			if err := internal.Restic(rootContext, args...); err != nil {
+			internal.LogRestic = log.New(os.Stdout, "", 0)
+			if err := internal.ExecRestic(rootContext, args...); err != nil {
 				return err
 			}
 			return nil
@@ -47,5 +50,6 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 
 	rootCmd.AddCommand(backupCmd)
+	rootCmd.AddCommand(cleanupCmd)
 	rootCmd.AddCommand(cronCmd)
 }

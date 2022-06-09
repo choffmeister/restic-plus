@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"runtime"
 )
@@ -16,16 +15,11 @@ var (
 	sftpIdentityFile = path.Join(resticDir, "sftp-identity.key")
 )
 
-func Restic(ctx *Context, args ...string) error {
+func ExecRestic(ctx *Context, args ...string) error {
 	config := ctx.Config
 
 	resticRepository := fmt.Sprintf("sftp://%s@%s:%d/", config.SFTP.User, config.SFTP.Host, config.SFTP.Port)
 	resticPassword := config.Restic.Password
-	cmdEnv := os.Environ()
-	cmdEnv = append(cmdEnv,
-		"RESTIC_REPOSITORY="+resticRepository,
-		"RESTIC_PASSWORD="+resticPassword,
-	)
 
 	sshCommand := fmt.Sprintf("ssh -i %s -p %d %s@%s -s sftp", sftpIdentityFile, config.SFTP.Port, config.SFTP.User, config.SFTP.Host)
 	cmdArgs := []string{}
@@ -34,14 +28,18 @@ func Restic(ctx *Context, args ...string) error {
 		fmt.Sprintf("sftp.command=%s", sshCommand),
 	)
 	cmdArgs = append(cmdArgs, args...)
+	cmdEnv := []string{
+		"RESTIC_REPOSITORY=" + resticRepository,
+		"RESTIC_PASSWORD=" + resticPassword,
+	}
 
-	cmd := exec.Command(ctx.ResticBinary, cmdArgs...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = cmdEnv
-
-	Debug.Printf("Executing restic command %v\n", cmdArgs)
-	if err := cmd.Run(); err != nil {
+	LogDebug.Printf("Executing restic command %v\n", cmdArgs)
+	if _, _, err := ExecCommandWithOpts(ExecCommandOpts{
+		Name:   ctx.ResticBinary,
+		Args:   cmdArgs,
+		Env:    cmdEnv,
+		Logger: LogRestic,
+	}); err != nil {
 		return fmt.Errorf("restic command failed: %w", err)
 	}
 	return nil
@@ -58,7 +56,7 @@ func prepareResticBinary(version string, target string) error {
 	if err != nil {
 		return err
 	}
-	Debug.Printf("Downloading %s to %s\n", resticBinUrl, target)
+	LogDebug.Printf("Downloading %s to %s\n", resticBinUrl, target)
 	client := http.Client{
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {
 			r.URL.Opaque = r.URL.Path

@@ -1,6 +1,9 @@
 targets:
-  - /home/user/Documents
-  - /home/user/Pictures
+  - from: /home/user/Documents
+  - type: zfs-dataset
+    from: tank/data/dataset
+  - type: zfs-zvol
+    from: tank/data/zvol
 restic:
   password: super-secure
 sftp:
