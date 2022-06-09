@@ -9,13 +9,8 @@ var (
 	backupCmd = &cobra.Command{
 		Use: "backup",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config := internal.Config{}
-			if err := config.LoadFromFile(""); err != nil {
-				return err
-			}
-
-			for _, target := range config.Targets {
-				if err := internal.Restic("backup", target); err != nil {
+			for _, target := range rootContext.Config.Targets {
+				if err := internal.Restic(rootContext, "backup", target); err != nil {
 					return err
 				}
 			}

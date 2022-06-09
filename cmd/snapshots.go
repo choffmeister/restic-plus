@@ -9,7 +9,7 @@ var (
 	snapshotsCmd = &cobra.Command{
 		Use: "snapshots",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := internal.Restic("snapshots"); err != nil {
+			if err := internal.Restic(rootContext, "snapshots"); err != nil {
 				return err
 			}
 

@@ -1,14 +1,5 @@
 package internal
 
-import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
-
-	"gopkg.in/yaml.v3"
-)
-
 type Config struct {
 	Targets []string     `yaml:"targets"`
 	Restic  ConfigRestic `yaml:"restic"`
@@ -47,26 +38,4 @@ type ConfigCronCleanupKeep struct {
 type ConfigBandwidth struct {
 	Download int `yaml:"download"`
 	Upload   int `yaml:"upload"`
-}
-
-func (c *Config) LoadFromFile(dir string) error {
-	if dir == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		dir = cwd
-	}
-
-	file := path.Join(dir, "restic-plus.yaml")
-	bytes, err := ioutil.ReadFile(file)
-	if err != nil {
-		return fmt.Errorf("unable to read config: %w", err)
-	}
-
-	if err := yaml.Unmarshal(bytes, c); err != nil {
-		return fmt.Errorf("unable to unmarshall config: %w", err)
-	}
-
-	return nil
 }

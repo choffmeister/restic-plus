@@ -4,7 +4,6 @@ import (
 	"compress/bzip2"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,76 +12,12 @@ import (
 )
 
 var (
-	resticVersion = "0.13.1"
-	resticBinUrl  = fmt.Sprintf("https://github.com/restic/restic/releases/download/v%s/restic_%s_%s_%s.bz2", resticVersion, resticVersion, runtime.GOOS, runtime.GOARCH)
-
 	resticDir        = path.Join(os.TempDir(), "restic")
-	resticBin        = path.Join(resticDir, "restic")
 	sftpIdentityFile = path.Join(resticDir, "sftp-identity.key")
 )
 
-func prepareBinary() error {
-	if stat, err := os.Stat(resticBin); err == nil && !stat.IsDir() {
-		return nil
-	}
-
-	err := os.MkdirAll(resticDir, 0o755)
-	if err != nil {
-		return err
-	}
-	Debug.Printf("Downloading %s to %s\n", resticBinUrl, resticBin)
-	client := http.Client{
-		CheckRedirect: func(r *http.Request, via []*http.Request) error {
-			r.URL.Opaque = r.URL.Path
-			return nil
-		},
-	}
-	resp, err := client.Get(resticBinUrl)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	archive := bzip2.NewReader(resp.Body)
-	if err != nil {
-		return err
-	}
-	file, err := os.OpenFile(resticBin, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o755)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = io.Copy(file, archive)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func prepareIdentity(identityPrivateKey string) error {
-	err := os.MkdirAll(resticDir, 0o755)
-	if err != nil {
-		return err
-	}
-	ioutil.WriteFile(sftpIdentityFile, []byte(identityPrivateKey), 0o600)
-
-	return nil
-}
-
-func Restic(args ...string) error {
-	config := Config{}
-	if err := config.LoadFromFile(""); err != nil {
-		return err
-	}
-
-	if err := prepareBinary(); err != nil {
-		return fmt.Errorf("unable to prepare underlying restic binary: %w", err)
-	}
-
-	if err := prepareIdentity(config.SFTP.IdentityPrivateKey); err != nil {
-		return fmt.Errorf("unable to prepare identity file: %w", err)
-	}
+func Restic(ctx *Context, args ...string) error {
+	config := ctx.Config
 
 	resticRepository := fmt.Sprintf("sftp://%s@%s:%d/", config.SFTP.User, config.SFTP.Host, config.SFTP.Port)
 	resticPassword := config.Restic.Password
@@ -100,7 +35,7 @@ func Restic(args ...string) error {
 	)
 	cmdArgs = append(cmdArgs, args...)
 
-	cmd := exec.Command(resticBin, cmdArgs...)
+	cmd := exec.Command(ctx.ResticBinary, cmdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = cmdEnv
@@ -109,5 +44,46 @@ func Restic(args ...string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("restic command failed: %w", err)
 	}
+	return nil
+}
+
+func prepareResticBinary(version string, target string) error {
+	resticBinUrl := fmt.Sprintf("https://github.com/restic/restic/releases/download/v%s/restic_%s_%s_%s.bz2", version, version, runtime.GOOS, runtime.GOARCH)
+
+	if stat, err := os.Stat(target); err == nil && !stat.IsDir() {
+		return nil
+	}
+
+	err := os.MkdirAll(path.Dir(target), 0o755)
+	if err != nil {
+		return err
+	}
+	Debug.Printf("Downloading %s to %s\n", resticBinUrl, target)
+	client := http.Client{
+		CheckRedirect: func(r *http.Request, via []*http.Request) error {
+			r.URL.Opaque = r.URL.Path
+			return nil
+		},
+	}
+	resp, err := client.Get(resticBinUrl)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	archive := bzip2.NewReader(resp.Body)
+	if err != nil {
+		return err
+	}
+	file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o755)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = io.Copy(file, archive)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

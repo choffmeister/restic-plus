@@ -9,7 +9,7 @@ var (
 	rawCmd = &cobra.Command{
 		Use: "raw",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := internal.Restic(args...); err != nil {
+			if err := internal.Restic(rootContext, args...); err != nil {
 				return err
 			}
 

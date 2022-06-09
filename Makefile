@@ -4,10 +4,7 @@ run:
 	go run . -v backup
 
 test:
-	go test $(shell go list ./... | grep -v e2e) -v
-
-test-e2e:
-	go test $(shell go list ./... | grep e2e) -v -timeout=60m
+	go test ./... -v
 
 test-cover:
 	go test -coverprofile=coverage.out ./...

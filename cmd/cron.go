@@ -11,34 +11,30 @@ var (
 	cronCmd = &cobra.Command{
 		Use: "cron",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config := internal.Config{}
-			if err := config.LoadFromFile(""); err != nil {
-				return err
-			}
-
 			if err := backupCmd.RunE(cmd, []string{}); err != nil {
 				return err
 			}
 
-			if config.Cron.Cleanup.Enabled {
+			cleanup := rootContext.Config.Cron.Cleanup
+			if cleanup.Enabled {
 				forgetArgs := []string{"forget", "--prune"}
-				if config.Cron.Cleanup.Keep.Last > 0 {
-					forgetArgs = append(forgetArgs, "--keep-last", strconv.Itoa(config.Cron.Cleanup.Keep.Last))
+				if cleanup.Keep.Last > 0 {
+					forgetArgs = append(forgetArgs, "--keep-last", strconv.Itoa(cleanup.Keep.Last))
 				}
-				if config.Cron.Cleanup.Keep.Daily > 0 {
-					forgetArgs = append(forgetArgs, "--keep-daily", strconv.Itoa(config.Cron.Cleanup.Keep.Daily))
+				if cleanup.Keep.Daily > 0 {
+					forgetArgs = append(forgetArgs, "--keep-daily", strconv.Itoa(cleanup.Keep.Daily))
 				}
-				if config.Cron.Cleanup.Keep.Weekly > 0 {
-					forgetArgs = append(forgetArgs, "--keep-weekly", strconv.Itoa(config.Cron.Cleanup.Keep.Weekly))
+				if cleanup.Keep.Weekly > 0 {
+					forgetArgs = append(forgetArgs, "--keep-weekly", strconv.Itoa(cleanup.Keep.Weekly))
 				}
-				if config.Cron.Cleanup.Keep.Monthly > 0 {
-					forgetArgs = append(forgetArgs, "--keep-monthly", strconv.Itoa(config.Cron.Cleanup.Keep.Monthly))
+				if cleanup.Keep.Monthly > 0 {
+					forgetArgs = append(forgetArgs, "--keep-monthly", strconv.Itoa(cleanup.Keep.Monthly))
 				}
-				if config.Cron.Cleanup.Keep.Yearly > 0 {
-					forgetArgs = append(forgetArgs, "--keep-yearly", strconv.Itoa(config.Cron.Cleanup.Keep.Yearly))
+				if cleanup.Keep.Yearly > 0 {
+					forgetArgs = append(forgetArgs, "--keep-yearly", strconv.Itoa(cleanup.Keep.Yearly))
 				}
 
-				if err := internal.Restic(forgetArgs...); err != nil {
+				if err := internal.Restic(rootContext, forgetArgs...); err != nil {
 					return err
 				}
 			}

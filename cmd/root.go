@@ -9,15 +9,23 @@ import (
 )
 
 var (
-	verbose bool
-	rootCmd = &cobra.Command{
+	rootCmdVerbose bool
+	rootCmdConfig  string
+	rootCmd        = &cobra.Command{
 		Use: "restic-plus",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if !verbose {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if !rootCmdVerbose {
 				internal.Debug = log.New(ioutil.Discard, "", log.LstdFlags)
 			}
+			context, err := internal.NewContext(rootCmdConfig)
+			if err != nil {
+				return err
+			}
+			rootContext = context
+			return nil
 		},
 	}
+	rootContext *internal.Context
 )
 
 func Execute() error {
@@ -25,7 +33,9 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "")
+	rootCmd.PersistentFlags().BoolVarP(&rootCmdVerbose, "verbose", "v", false, "")
+	rootCmd.PersistentFlags().StringVarP(&rootCmdConfig, "config", "c", "restic-plus.yaml", "")
+
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(rawCmd)
 
