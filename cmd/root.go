@@ -24,6 +24,15 @@ var (
 			rootContext = context
 			return nil
 		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return cmd.Usage()
+			}
+			if err := internal.Restic(rootContext, args...); err != nil {
+				return err
+			}
+			return nil
+		},
 	}
 	rootContext *internal.Context
 )
@@ -35,11 +44,8 @@ func Execute() error {
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&rootCmdVerbose, "verbose", "v", false, "")
 	rootCmd.PersistentFlags().StringVarP(&rootCmdConfig, "config", "c", "restic-plus.yaml", "")
-
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(rawCmd)
 
 	rootCmd.AddCommand(backupCmd)
 	rootCmd.AddCommand(cronCmd)
-	rootCmd.AddCommand(snapshotsCmd)
 }
