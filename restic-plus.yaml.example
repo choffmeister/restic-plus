@@ -1,4 +1,4 @@
-targets:
+stanzas:
   - from: /home/user/Documents
   - type: zfs-dataset
     from: tank/data/dataset

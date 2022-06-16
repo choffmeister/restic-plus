@@ -31,7 +31,7 @@ var (
 				return cmd.Usage()
 			}
 			internal.LogRestic = log.New(os.Stdout, "", 0)
-			if err := internal.ExecRestic(rootContext, args...); err != nil {
+			if err := rootContext.ExecRestic(args...); err != nil {
 				return err
 			}
 			return nil

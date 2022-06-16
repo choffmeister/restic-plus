@@ -32,7 +32,7 @@ var (
 					args = append(args, "--keep-yearly", strconv.Itoa(cleanup.Keep.Yearly))
 				}
 
-				if err := internal.ExecRestic(rootContext, args...); err != nil {
+				if err := rootContext.ExecRestic(args...); err != nil {
 					return err
 				}
 			}

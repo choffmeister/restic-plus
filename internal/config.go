@@ -7,43 +7,43 @@ import (
 )
 
 type Config struct {
-	Targets   []ConfigTarget  `yaml:"targets"`
+	Stanzas   []ConfigStanza  `yaml:"stanzas"`
 	Restic    ConfigRestic    `yaml:"restic"`
 	SFTP      ConfigSFTP      `yaml:"sftp"`
 	Cron      ConfigCron      `yaml:"cron"`
 	Bandwidth ConfigBandwidth `yaml:"bandwidth"`
 }
 
-type ConfigTarget struct {
+type ConfigStanza struct {
 	Type           string `yaml:"type"`
-	Implementation Target
+	Implementation Stanza
 }
 
-func (ct *ConfigTarget) UnmarshalYAML(value *yaml.Node) error {
-	type rawConfigTarget ConfigTarget
-	if err := value.Decode((*rawConfigTarget)(ct)); err != nil {
+func (ct *ConfigStanza) UnmarshalYAML(value *yaml.Node) error {
+	type rawConfigStanza ConfigStanza
+	if err := value.Decode((*rawConfigStanza)(ct)); err != nil {
 		return err
 	}
 
 	switch ct.Type {
 	case "":
 		fallthrough
-	case DirectoryTargetType:
-		implementation := &DirectoryTarget{}
+	case DirectoryStanzaType:
+		implementation := &DirectoryStanza{}
 		if err := value.Decode(implementation); err != nil {
-			return fmt.Errorf("invalid configuration for target %s: %w", ct.Type, err)
+			return fmt.Errorf("invalid configuration for stanza %s: %w", ct.Type, err)
 		}
 		ct.Implementation = implementation
-	case ZFSDatasetTargetType:
-		implementation := &ZFSDatasetTarget{}
+	case ZFSDatasetStanzaType:
+		implementation := &ZFSDatasetStanza{}
 		if err := value.Decode(implementation); err != nil {
-			return fmt.Errorf("invalid configuration for target %s: %w", ct.Type, err)
+			return fmt.Errorf("invalid configuration for stanza %s: %w", ct.Type, err)
 		}
 		ct.Implementation = implementation
-	case ZFSZvolTargetType:
-		implementation := &ZFSZvolTarget{}
+	case ZFSZvolStanzaType:
+		implementation := &ZFSZvolStanza{}
 		if err := value.Decode(implementation); err != nil {
-			return fmt.Errorf("invalid configuration for target %s: %w", ct.Type, err)
+			return fmt.Errorf("invalid configuration for stanza %s: %w", ct.Type, err)
 		}
 		ct.Implementation = implementation
 	default:

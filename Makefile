@@ -1,7 +1,8 @@
 .PHONY: *
 
 run:
-	go run . -v backup
+	go run . -v cron
+	go run . -v -- snapshots
 
 test:
 	go test ./... -v
