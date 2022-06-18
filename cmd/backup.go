@@ -29,7 +29,7 @@ var (
 				}
 
 				for _, source := range sources {
-					args := []string{"backup", source}
+					args := []string{"backup", source, "--json"}
 					if bandwidth.Download > 0 {
 						args = append(args, "--limit-downlowd", strconv.Itoa(bandwidth.Download))
 					}
